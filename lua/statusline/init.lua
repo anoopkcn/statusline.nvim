@@ -1,6 +1,5 @@
 -- LICENSE: MIT
 -- by @anoopkcn
--- https://github.com/anoopkcn/dotfiles/blob/main/nvim/lua/statusline/init.lua
 -- Description: A custom statusline module for Neovim that displays mode, file path,
 -- diagnostics, version control info, and line details with dynamic highlights.
 
