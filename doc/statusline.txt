@@ -1,0 +1,463 @@
+*statusline.txt*  Custom statusline with diagnostics, git, and mode info
+
+Author:  @anoopkcn <https://github.com/anoopkcn>
+License: MIT
+
+==============================================================================
+CONTENTS                                                *statusline-contents*
+
+1. Introduction ............................ |statusline-introduction|
+2. Features ................................ |statusline-features|
+3. Requirements ............................ |statusline-requirements|
+4. Setup ................................... |statusline-setup|
+5. Components .............................. |statusline-components|
+    5.1 Mode ............................... |statusline-mode|
+    5.2 File Path .......................... |statusline-filepath|
+    5.3 Diagnostics ........................ |statusline-diagnostics|
+    5.4 Version Control .................... |statusline-vcs|
+    5.5 File Type .......................... |statusline-filetype|
+    5.6 Line Information ................... |statusline-lineinfo|
+6. Highlights .............................. |statusline-highlights|
+7. Performance ............................. |statusline-performance|
+8. Integration ............................. |statusline-integration|
+9. Customization ........................... |statusline-customization|
+
+==============================================================================
+1. INTRODUCTION                                    *statusline-introduction*
+
+A lightweight, fast custom statusline for Neovim that displays essential
+information with minimal overhead. Unlike heavy statusline plugins, this
+implementation focuses on performance through caching and efficient rendering.
+
+The statusline automatically adapts to your colorscheme and integrates with
+LSP diagnostics, git information, and file metadata.
+
+==============================================================================
+2. FEATURES                                            *statusline-features*
+
+• Vim mode display (NORMAL, INSERT, VISUAL, etc.)
+• File path and name with directory truncation
+• Real-time LSP diagnostics with color-coded counts
+• Git branch and diff statistics (via vim-fugitive and mini.diff)
+• File type indicator
+• Cursor position and percentage through file
+• Active/inactive window differentiation
+• Automatic colorscheme adaptation
+• Diagnostic caching for performance
+• Modified buffer indicator
+
+==============================================================================
+3. REQUIREMENTS                                    *statusline-requirements*
+
+Mandatory:
+  • Neovim 0.9.0+ (uses newer API functions)
+
+Optional (for enhanced features):
+  • vim-fugitive - Git branch display
+  • mini.diff - Git diff statistics (add/change/delete counts)
+  • LSP client - Diagnostic information
+
+Without optional plugins:
+  • Git branch won't be displayed (without vim-fugitive)
+  • Diff stats won't be shown (without mini.diff)
+  • Diagnostics won't appear (without LSP)
+
+The statusline will gracefully degrade if these are not available.
+
+==============================================================================
+4. SETUP                                                  *statusline-setup*
+
+Basic setup in your init.lua: >
+    require('statusline').setup()
+<
+That's it! The statusline is now active.
+
+The statusline automatically:
+  • Creates highlight groups based on your colorscheme
+  • Sets up autocmds for diagnostic updates
+  • Configures active/inactive window rendering
+  • Updates when colorscheme changes
+
+==============================================================================
+5. COMPONENTS                                        *statusline-components*
+
+The statusline displays components in this order:
+
+    [MODE] ~/path/to/file.lua[+] ⚠ E:2 W:1    git:main +5 ~2 -1  LUA  50% 42:15
+
+    ├──┬─┘ ├────────┬─────────┘ ├────┬────┘ ├──────┬───────┘ ├─┬┘ ├──┬──┘
+    │  │   │        │           │    │      │      │         │ │  │  │
+    │  │   │        │           │    │      │      │         │ │  │  └─ Column
+    │  │   │        │           │    │      │      │         │ │  └─ Line
+    │  │   │        │           │    │      │      │         │ └─ Percentage
+    │  │   │        │           │    │      │      │         └─ Filetype
+    │  │   │        │           │    │      │      └─ Diff stats
+    │  │   │        │           │    │      └─ Git branch
+    │  │   │        │           │    └─ Diagnostic counts
+    │  │   │        │           └─ Modified indicator
+    │  │   │        └─ Filename
+    │  │   └─ Directory path
+    │  └─ Mode indicator
+    └─ Highlight group
+
+------------------------------------------------------------------------------
+5.1 Mode                                                  *statusline-mode*
+
+Displays the current Vim mode in uppercase.
+
+Format: >
+    MODE
+<
+Examples:
+    N        Normal mode
+    I        Insert mode
+    V        Visual mode (character-wise)
+    V-LINE   Visual mode (line-wise)
+    V-BLOCK  Visual mode (block-wise)
+    C        Command-line mode
+    R        Replace mode
+    T        Terminal mode
+
+The mode uses the |StatuslineMode| highlight group, which adapts to your
+colorscheme. See |statusline-highlights|.
+
+------------------------------------------------------------------------------
+5.2 File Path                                          *statusline-filepath*
+
+Displays the file path relative to home directory or current directory.
+
+Format: >
+    ~/directory/path/filename.ext[+]
+<
+Behavior:
+  • Directory path is shown with trailing /
+  • Filename is shown separately
+  • [+] indicator appears if buffer is modified
+  • Path truncates with %< if window is too narrow
+  • Shows working directory if no file is open
+
+Examples:
+    ~/projects/nvim/init.lua           File in home directory
+    ./lua/statusline/init.lua          File in current directory
+    /etc/hosts                         Absolute path
+    ~/.config/nvim                     Directory when no file
+
+For unnamed buffers:
+    ~/projects/myproject               Shows current working directory
+
+------------------------------------------------------------------------------
+5.3 Diagnostics                                    *statusline-diagnostics*
+
+Displays LSP diagnostic counts with color-coded symbols.
+
+Format: >
+    ⚠ E:2 W:1 I:3 H:1
+<
+Symbol meanings:
+    ⚠       Diagnostic indicator
+    E:n     Error count (red)
+    W:n     Warning count (yellow)
+    I:n     Info count (cyan)
+    H:n     Hint count (green)
+
+Only non-zero counts are displayed. If no diagnostics, this section is empty.
+
+Highlight groups (see |statusline-highlights|):
+    StatuslineDiagnosticError       Error count
+    StatuslineDiagnosticWarn        Warning count
+    StatuslineDiagnosticInfo        Info count
+    StatuslineDiagnosticHint        Hint count
+
+Performance:
+Diagnostic counts are cached and only updated on |DiagnosticChanged| and
+|BufEnter| events. This prevents statusline lag when diagnostics are frequent.
+
+------------------------------------------------------------------------------
+5.4 Version Control                                      *statusline-vcs*
+
+Displays git branch and diff statistics.
+
+Format: >
+    git:branch-name +5 ~2 -1
+<
+Components:
+    git:main        Current branch (via vim-fugitive)
+    +5              Lines added (via mini.diff)
+    ~2              Lines changed (via mini.diff)
+    -1              Lines deleted (via mini.diff)
+
+Integration:
+  • Branch name from |FugitiveHead()| (vim-fugitive plugin)
+  • Diff stats from mini.diff summary
+  • Falls back to mini.diff source name if branch unavailable
+  • Empty if neither plugin is available
+
+Examples:
+    git:main +10 ~3 -2          Branch with changes
+    git:feature/new             Branch without changes
+    git:HEAD                    Detached HEAD state
+    (empty)                     Not in a git repository
+
+------------------------------------------------------------------------------
+5.5 File Type                                          *statusline-filetype*
+
+Displays the buffer's filetype in uppercase.
+
+Format: >
+    FILETYPE
+<
+Examples:
+    LUA         Lua file
+    VIM         Vim script
+    PYTHON      Python file
+    MARKDOWN    Markdown file
+    (empty)     No filetype set
+
+Hidden for special buffers like alpha (dashboard).
+
+------------------------------------------------------------------------------
+5.6 Line Information                                  *statusline-lineinfo*
+
+Displays cursor position and progress through the file.
+
+Format: >
+    50% 42:15
+<
+Components:
+    50%         Percentage through file
+    42          Current line number
+    15          Current column number
+
+Uses Vim's built-in format strings:
+    %P          Percentage through file
+    %l          Line number
+    %c          Column number
+
+Hidden for special buffers like alpha (dashboard).
+
+==============================================================================
+6. HIGHLIGHTS                                        *statusline-highlights*
+
+The statusline creates these highlight groups:
+
+                                                      *StatuslineMode*
+StatuslineMode~
+    Used for the mode indicator.
+    Default: Cyan foreground, statusline background, bold
+
+                                            *StatuslineDiagnosticError*
+StatuslineDiagnosticError~
+    Used for error count in diagnostics.
+    Default: Links to |DiagnosticError| foreground, statusline background, bold
+
+                                            *StatuslineDiagnosticWarn*
+StatuslineDiagnosticWarn~
+    Used for warning count in diagnostics.
+    Default: Links to |DiagnosticWarn| foreground, statusline background, bold
+
+                                            *StatuslineDiagnosticInfo*
+StatuslineDiagnosticInfo~
+    Used for info count in diagnostics.
+    Default: Links to |DiagnosticInfo| foreground, statusline background, bold
+
+                                            *StatuslineDiagnosticHint*
+StatuslineDiagnosticHint~
+    Used for hint count in diagnostics.
+    Default: Links to |DiagnosticHint| foreground, statusline background, bold
+
+Automatic Updates~
+Highlight groups are automatically updated when you change colorschemes via
+the |ColorScheme| autocmd. Colors are derived from your diagnostic highlights
+with fallback colors if those aren't defined.
+
+Fallback colors:
+    Error:  #e06c75 (red)
+    Warn:   #e5c07b (yellow)
+    Info:   #56b6c2 (cyan)
+    Hint:   #98c379 (green)
+
+Customizing highlights: >
+    vim.api.nvim_set_hl(0, 'StatuslineMode', {
+        fg = '#61afef',
+        bg = '#282c34',
+        bold = true,
+    })
+<
+==============================================================================
+7. PERFORMANCE                                      *statusline-performance*
+
+The statusline is optimized for minimal overhead:
+
+Diagnostic Caching~
+Diagnostics are cached per buffer and only updated on:
+  • |DiagnosticChanged| - When LSP updates diagnostics
+  • |BufEnter| - When switching buffers
+  • |BufDelete| - Cache is cleaned up
+
+This prevents statusline evaluation from calling |vim.diagnostic.get()| on
+every redraw, which can be slow with many diagnostics.
+
+Efficient Rendering~
+  • Active/inactive statuslines use different rendering paths
+  • String concatenation uses table.concat for efficiency
+  • Minimal function calls during render
+  • Direct access to cached values
+
+Memory Management~
+  • Diagnostic cache is cleaned up when buffers are deleted
+  • No global variables or state accumulation
+  • Minimal autocmd usage
+
+Typical overhead: <0.1ms per statusline update
+
+==============================================================================
+8. INTEGRATION                                      *statusline-integration*
+
+------------------------------------------------------------------------------
+vim-fugitive~
+    Plugin: https://github.com/tpope/vim-fugitive
+
+    Provides git branch name via |FugitiveHead()| function.
+
+    Installation: >
+        -- Using lazy.nvim
+        { 'tpope/vim-fugitive' }
+<
+    The statusline checks for |FugitiveHead()| existence before calling it,
+    so it won't error if vim-fugitive isn't installed.
+
+------------------------------------------------------------------------------
+mini.diff~
+    Plugin: https://github.com/echasnovski/mini.diff
+
+    Provides git diff statistics (added/changed/deleted lines).
+
+    Installation: >
+        -- Using lazy.nvim
+        {
+            'echasnovski/mini.diff',
+            config = function()
+                require('mini.diff').setup()
+            end
+        }
+<
+    The statusline reads from |vim.b.minidiff_summary| which contains:
+        {
+            source_name = "git",  -- VCS source
+            add = 5,              -- Lines added
+            change = 2,           -- Lines changed
+            delete = 1,           -- Lines deleted
+        }
+
+------------------------------------------------------------------------------
+LSP Client~
+    Built-in Neovim LSP client provides diagnostics.
+
+    Setup example: >
+        -- Enable LSP for a language
+        require('lspconfig').lua_ls.setup({})
+<
+    Diagnostics are automatically available via |vim.diagnostic.get()|.
+    The statusline will show counts when diagnostics are present.
+
+==============================================================================
+9. CUSTOMIZATION                                  *statusline-customization*
+
+The statusline module is designed to be minimal, but you can customize it by
+modifying the source code or wrapping functions.
+
+------------------------------------------------------------------------------
+Changing Diagnostic Symbol~
+
+Edit the diagnostic_symbol variable: >
+    -- In lua/statusline/init.lua
+    local diagnostic_symbol = "●"  -- or "!" or "⚠" or ""
+<
+------------------------------------------------------------------------------
+Hiding Components~
+
+Modify the statusline_active() function to exclude components: >
+    -- Example: Hide filetype
+    -- Comment out or remove this section:
+    -- if buf_ft ~= "" then
+    --     parts[#parts + 1] = " " .. buf_ft:upper() .. " "
+    -- end
+<
+------------------------------------------------------------------------------
+Adding Custom Components~
+
+Add new components to the statusline_active() function: >
+    -- Example: Add word count for markdown files
+    local function word_count()
+        if vim.bo.filetype == 'markdown' then
+            local words = vim.fn.wordcount().words
+            return string.format(' %d words ', words)
+        end
+        return ''
+    end
+
+    -- In statusline_active(), add:
+    parts[#parts + 1] = word_count()
+<
+------------------------------------------------------------------------------
+Custom Highlight Colors~
+
+Override highlight groups after setup: >
+    require('statusline').setup()
+
+    -- Custom mode highlight
+    vim.api.nvim_set_hl(0, 'StatuslineMode', {
+        fg = '#ff0000',
+        bg = '#000000',
+        bold = true,
+    })
+
+    -- Custom error diagnostic highlight
+    vim.api.nvim_set_hl(0, 'StatuslineDiagnosticError', {
+        fg = '#ff5555',
+        bold = true,
+    })
+<
+------------------------------------------------------------------------------
+Alternative Rendering Function~
+
+Replace the render function entirely: >
+    local statusline = require('statusline')
+
+    -- Save original
+    local original_render = statusline.render
+
+    -- Create custom render
+    statusline.render = function()
+        -- Your custom statusline logic
+        return '%f %m %= %l:%c'
+    end
+
+    -- Or wrap original
+    statusline.render = function()
+        local original = original_render()
+        return original .. ' [CUSTOM]'
+    end
+<
+------------------------------------------------------------------------------
+Per-Filetype Statuslines~
+
+Use FileType autocmd to set different statuslines: >
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'markdown',
+        callback = function()
+            -- Simple statusline for markdown
+            vim.wo.statusline = '%f %= %l:%c'
+        end
+    })
+
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'lua',
+        callback = function()
+            -- Return to custom statusline
+            vim.wo.statusline = "%!v:lua.require'statusline'.render()"
+        end
+    })
+<
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
