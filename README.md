@@ -16,23 +16,20 @@ A lightweight, fast custom statusline for Neovim with LSP diagnostics, git integ
 
 ## Visual Example
 
-```
-[N] ~/projects/nvim/init.lua[+]  E:2 W:1    git:main +5 ~2 -1  LUA  50% 42:15
-```
+![demo](https://github.com/user-attachments/assets/e1dbc5f5-30be-4523-9aa3-138ed3a7891c)
 
 ```
-[MODE] ~/path/to/file.lua[+] ⚠ E:2 W:1    git:main +5 ~2 -1  LUA  50% 42:15
-
-├──┬─┘ ├────────┬─────────┘ ├────┬────┘ ├──────┬───────┘ ├─┬┘ ├──┬──┘
-│  │   │        │           │    │      │      │         │ │  │  │
-│  │   │        │           │    │      │      │         │ │  │  └─ Column
-│  │   │        │           │    │      │      │         │ │  └─ Line
-│  │   │        │           │    │      │      │         │ └─ Percentage
-│  │   │        │           │    │      │      │         └─ Filetype
-│  │   │        │           │    │      │      └─ Diff stats
-│  │   │        │           │    │      └─ Git branch
-│  │   │        │           │    └─ Diagnostic counts
-│  │   │        │           └─ Modified indicator
+[MODE] ~/path/to/file.lua[+]  E:2 W:1    git:main +5 ~2 -1  LUA  50% 42:15
+├──┬─┘ ├────────┬───────┘ │   ├─────┘        │    ├──────┘   │    │  ├─┬─┘
+│  │   │        │         │   │              │    │          │    │  │ │
+│  │   │        │         │   │              │    │          │    │  │ └─ Column
+│  │   │        │         │   │              │    │          │    │  └─ Line
+│  │   │        │         │   │              │    │          │    └─ Percentage
+│  │   │        │         │   │              │    │          └─ Filetype
+│  │   │        │         │   │              │    └─ Diff stats
+│  │   │        │         │   │              └─ Git branch
+│  │   │        │         │   └─ Diagnostic counts
+│  │   │        │         └─ Modified indicator
 │  │   │        └─ Filename
 │  │   └─ Directory path
 │  └─ Mode indicator
