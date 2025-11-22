@@ -17,6 +17,7 @@ CONTENTS                                                *statusline-contents*
     5.4 Version Control .................... |statusline-vcs|
     5.5 File Type .......................... |statusline-filetype|
     5.6 Line Information ................... |statusline-lineinfo|
+    5.7 Buffer Number ...................... |statusline-bufnr|
 6. Highlights .............................. |statusline-highlights|
 7. Performance ............................. |statusline-performance|
 8. Integration ............................. |statusline-integration|
@@ -40,6 +41,7 @@ LSP diagnostics, git information, and file metadata.
 • Real-time LSP diagnostics with color-coded counts
 • Git branch and diff statistics (via vim-fugitive and mini.diff)
 • File type indicator
+• Buffer number display for quick buffer switching
 • Cursor position and percentage through file
 • Active/inactive window differentiation
 • Automatic colorscheme adaptation
@@ -241,6 +243,17 @@ Uses Vim's built-in format strings:
 
 Hidden for special buffers like alpha (dashboard).
 
+------------------------------------------------------------------------------
+5.7 Buffer Number                                       *statusline-bufnr*
+
+Displays the current buffer number, useful for quick buffer jumps with commands
+like :b and :buffer.
+
+Format: >
+    #12
+<
+Shown only when the buffer number is valid.
+
 ==============================================================================
 6. HIGHLIGHTS                                        *statusline-highlights*
 
@@ -385,7 +398,7 @@ Configure which components render on the left, middle, and right sections: >
     })
 <
 Available component names: mode, filepath, filename, diagnostics, vcs,
-filetype, position. Unknown names are ignored.
+filetype, position, bufnr. Unknown names are ignored.
 
 Tip: Put directory/filename in `middle` to center them in the statusline.
 

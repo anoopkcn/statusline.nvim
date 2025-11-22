@@ -204,6 +204,13 @@ local function vcs(bufnr)
 end
 
 local component_renderers = {
+    bufnr = function(context)
+        local bufnr = context.bufnr
+        if bufnr and bufnr > 0 and vim.api.nvim_buf_is_valid(bufnr) then
+            return string.format(" #%d ", bufnr)
+        end
+        return ""
+    end,
     mode = function()
         return mode()
     end,

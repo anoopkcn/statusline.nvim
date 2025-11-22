@@ -8,6 +8,7 @@ A lightweight, fast custom statusline for Neovim with LSP diagnostics, git integ
 - **File Path & Name** - Smart path display with directory truncation and modified indicator
 - **LSP Diagnostics** - Real-time error, warning, info, and hint counts with color-coded symbols
 - **Git Integration** - Branch name and diff statistics (additions, changes, deletions)
+- **Buffer Number** - Quickly see the current buffer number for easy jumps
 - **File Type Indicator** - Shows current buffer's filetype
 - **Cursor Position** - Line number, column, and percentage through file
 - **Active/Inactive Differentiation** - Different display for active and inactive windows
@@ -187,7 +188,7 @@ require('statusline').setup({
 })
 ```
 
-Available components: `mode`, `filepath`, `filename`, `diagnostics`, `vcs`, `filetype`, `position`. Components listed in `left` render first, `middle` renders after the first `%=` separator, and `right` renders after the second `%=`. Unknown names are ignored.
+Available components: `mode`, `filepath`, `filename`, `diagnostics`, `vcs`, `filetype`, `position`, `bufnr`. Components listed in `left` render first, `middle` renders after the first `%=` separator, and `right` renders after the second `%=`. Unknown names are ignored.
 
 ### Changing the Diagnostic Symbol
 
