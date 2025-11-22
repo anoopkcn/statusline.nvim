@@ -173,6 +173,22 @@ vim.api.nvim_set_hl(0, 'StatuslineDiagnosticError', {
 - `StatuslineDiagnosticInfo` - Info count
 - `StatuslineDiagnosticHint` - Hint count
 
+### Reorder Components
+
+Control the order and side (left/right of `%=`) for built-in components:
+
+```lua
+require('statusline').setup({
+  sections = {
+    left = { 'mode', 'diagnostics' },
+    middle = { 'filepath', 'filename' },
+    right = { 'vcs', 'filetype', 'position' },
+  },
+})
+```
+
+Available components: `mode`, `filepath`, `filename`, `diagnostics`, `vcs`, `filetype`, `position`. Components listed in `left` render first, `middle` renders after the first `%=` separator, and `right` renders after the second `%=`. Unknown names are ignored.
+
 ### Changing the Diagnostic Symbol
 
 Edit the `diagnostic_symbol` variable in `lua/statusline/init.lua`:

@@ -81,7 +81,13 @@ The statusline automatically:
 ==============================================================================
 5. COMPONENTS                                        *statusline-components*
 
-The statusline displays components in this order:
+Components render in configurable sections separated by %=: LEFT %= MIDDLE %= RIGHT.
+Default sections:
+  • left:   mode, filepath, filename, diagnostics
+  • middle: (empty)
+  • right:  vcs, filetype, position
+
+Default layout example:
 
     [MODE] ~/path/to/file.lua[+] ⚠ E:2 W:1    git:main +5 ~2 -1  LUA  50% 42:15
 
@@ -367,6 +373,23 @@ The statusline module is designed to be minimal, but you can customize it by
 modifying the source code or wrapping functions.
 
 ------------------------------------------------------------------------------
+Reordering Components                                     *statusline-reorder*
+
+Configure which components render on the left, middle, and right sections: >
+    require('statusline').setup({
+        sections = {
+            left = { 'mode', 'diagnostics' },
+            middle = { 'filepath', 'filename' },  -- Appears between %= separators
+            right = { 'vcs', 'filetype', 'position' },
+        },
+    })
+<
+Available component names: mode, filepath, filename, diagnostics, vcs,
+filetype, position. Unknown names are ignored.
+
+Tip: Put directory/filename in `middle` to center them in the statusline.
+
+------------------------------------------------------------------------------
 Changing Diagnostic Symbol~
 
 Edit the diagnostic_symbol variable: >
@@ -376,12 +399,14 @@ Edit the diagnostic_symbol variable: >
 ------------------------------------------------------------------------------
 Hiding Components~
 
-Modify the statusline_active() function to exclude components: >
-    -- Example: Hide filetype
-    -- Comment out or remove this section:
-    -- if buf_ft ~= "" then
-    --     parts[#parts + 1] = " " .. buf_ft:upper() .. " "
-    -- end
+Remove them from the relevant sections in setup: >
+    require('statusline').setup({
+        sections = {
+            left = { 'mode', 'diagnostics' },
+            middle = { 'filepath', 'filename' },
+            right = { 'position' },  -- Hide vcs/filetype by leaving them out
+        },
+    })
 <
 ------------------------------------------------------------------------------
 Adding Custom Components~

@@ -5,6 +5,16 @@
 
 local M = {}
 
+local default_config = {
+    sections = {
+        left = { "mode", "filepath", "filename", "diagnostics" },
+        middle = {},
+        right = { "vcs", "filetype", "position" },
+    },
+}
+
+local config = vim.deepcopy(default_config)
+
 local diagnostic_symbol = ""
 local diagnostic_sections = {
     { key = "Error", severity = vim.diagnostic.severity.ERROR, source = "DiagnosticError", fallback = "#e06c75" },
@@ -193,47 +203,94 @@ local function vcs(bufnr)
     return branch_segment .. summary_string
 end
 
+local component_renderers = {
+    mode = function()
+        return mode()
+    end,
+    filepath = function(context)
+        if context.dir ~= "" then
+            return string.format(" %%<%s/", context.dir)
+        end
+        return " "
+    end,
+    filename = function(context)
+        if context.name ~= "" then
+            return context.name .. "%m "
+        end
+        return ""
+    end,
+    diagnostics = function(context)
+        return lsp(context.bufnr)
+    end,
+    vcs = function(context)
+        return vcs(context.bufnr)
+    end,
+    filetype = function(context)
+        if context.filetype ~= "" then
+            return " " .. context.filetype:upper() .. " "
+        end
+        return ""
+    end,
+    position = function(context)
+        if context.filetype ~= "alpha" then
+            return " %P %l:%c "
+        end
+        return ""
+    end,
+}
+
+local function render_components(list, context)
+    if type(list) ~= "table" then
+        return {}
+    end
+
+    local parts = {}
+    for _, name in ipairs(list) do
+        local renderer = component_renderers[name]
+        if renderer then
+            local ok, value = pcall(renderer, context)
+            if ok and value and value ~= "" then
+                parts[#parts + 1] = value
+            end
+        end
+    end
+    return parts
+end
+
 local function statusline_active(bufnr)
     local target = (bufnr and vim.api.nvim_buf_is_valid(bufnr)) and bufnr or vim.api.nvim_get_current_buf()
     local dir, name = get_buffer_paths(target)
     local ok, buf_ft = pcall(vim.api.nvim_get_option_value, "filetype", { buf = target })
     buf_ft = ok and buf_ft or ""
 
-    -- Build statusline components inline
-    local parts = {
-        "%#Statusline#",
-        mode(),
+    local context = {
+        bufnr = target,
+        dir = dir,
+        name = name,
+        filetype = buf_ft,
     }
 
-    -- Filepath
-    if dir ~= "" then
-        parts[#parts + 1] = string.format(" %%<%s/", dir)
-    else
-        parts[#parts + 1] = " "
+    local parts = { "%#Statusline#" }
+
+    local left = render_components(config.sections.left, context)
+    for _, segment in ipairs(left) do
+        parts[#parts + 1] = segment
     end
 
-    -- Filename
-    if name ~= "" then
-        parts[#parts + 1] = name .. "%m "
+    local middle = render_components(config.sections.middle, context)
+    if #middle > 0 then
+        parts[#parts + 1] = "%="
+        for _, segment in ipairs(middle) do
+            parts[#parts + 1] = segment
+        end
     end
 
-    -- Diagnostics
-    parts[#parts + 1] = lsp(target)
-
-    -- Right align
-    parts[#parts + 1] = "%="
-
-    -- VCS
-    parts[#parts + 1] = vcs(target)
-
-    -- Filetype
-    if buf_ft ~= "" then
-        parts[#parts + 1] = " " .. buf_ft:upper() .. " "
-    end
-
-    -- Line info
-    if buf_ft ~= "alpha" then
-        parts[#parts + 1] = " %P %l:%c "
+    local right = render_components(config.sections.right, context)
+    if #right > 0 or #middle == 0 then
+        parts[#parts + 1] = "%="
+        for _, segment in ipairs(right) do
+            parts[#parts + 1] = segment
+        end
     end
 
     return table.concat(parts)
@@ -259,7 +316,9 @@ end
 
 M.render = render
 
-M.setup = function()
+M.setup = function(opts)
+    opts = opts or {}
+    config = vim.tbl_deep_extend("force", default_config, opts)
     vim.o.statusline = "%!v:lua.require'statusline'.render()"
 end
 
